@@ -3,9 +3,8 @@
 """
 
 # Custom module imports
-import screen as Screen
-import global_objects as G
-import config as C
+import habitican_curse.global_objects as G
+import habitican_curse.config as C
 import logging
 
 #Initialize the logging facility

@@ -5,30 +5,36 @@
 """
 
 # Standard Library Imports
-import time
-import math
 
 # Custom Module Imports
 
-import config as C
-from screen import Screen
-import global_objects as G
-import helper as H
-import menu as M
-import task as T
-import debug as DEBUG
-import user as U
+# Set up logging
+# Set up logging
+# Standard Library Imports
 
-#Set up logging
+# Set up logging
+# Set up logging
 import logging
+import math
+# Standard Library Imports
+import time
+
+import habitican_curse.config as C
+import habitican_curse.debug as DEBUG
+import habitican_curse.global_objects as G
+import habitican_curse.helper as H
+import habitican_curse.menu as M
+
+# Custom Module Imports
 logger = logging.getLogger(__name__)
 logger.debug("Debug logging started for %s..." % __name__)
+
 
 class ContentManager(object):
     """ Class for managing Habitica content """
 
     def __init__(self):
-        #DEBUG.Display("Content Fetching in progress...")
+        # DEBUG.Display("Content Fetching in progress...")
         self.contentDict = G.reqManager.FetchGameContent()
 
     def Quest(self, key):
@@ -48,19 +54,20 @@ class Party(object):
         logger.debug("Party Object - \n %s" % str(party))
 
         # Some Basic Details
-        self.name    = party['name'].encode('utf-8')
+        self.name = party['name']
 
-        #self.members = [str(i['profile']['name']) for i in party['members']]
+        # self.members = [str(i['profile']['name']) for i in party['members']]
         # V3 changes, members don't work no more :(
         self.members = ['(Member list not implemented)']
 
-        self.chat    = party['chat']
+        self.chat = party['chat']
         chat_items = []
         chatList = self.chat[:50]
         for i in chatList:
             timeElapsed = H.GetDifferenceTime(i['timestamp'])
             detailString = i.get('user', '') + " " + timeElapsed
-            chat_items += [M.SimpleTextItem(str(i['text'].encode("utf-8")), additional=str(detailString))]
+            chat_items += [M.SimpleTextItem(str(i['text']),
+                                            additional=str(detailString))]
 
         self.chatMenu = M.SimpleTextMenu(chat_items, C.SCR_TEXT_AREA_LENGTH)
 
@@ -72,48 +79,55 @@ class Party(object):
                 time.sleep(5)
             DEBUG.Display(" ")
 
-            self.questDetails = G.content.Quest(str(self.quest['key'].encode("utf-8")))
-            self.questText    = str(self.questDetails['text'].encode("utf-8"))
+            self.questDetails = G.content.Quest(
+                str(self.quest['key']))
+            self.questText = str(self.questDetails['text'])
 
             self.questType = ""
             self.progress = 0
 
-            if self.questDetails.has_key('boss'):
-                self.questType     = "boss"
+            if 'boss' in self.questDetails:
+                self.questType = "boss"
                 self.bossMaxHealth = self.questDetails['boss']['hp']
-                self.bossName      = self.questDetails['boss']['name']
-                self.bossRage      = self.questDetails['boss'].get('rage', None)
-                self.bossStrength  = self.questDetails['boss']['str']
+                self.bossName = self.questDetails['boss']['name']
+                self.bossRage = self.questDetails['boss'].get('rage', None)
+                self.bossStrength = self.questDetails['boss']['str']
 
-                if(party['quest']['active']):
-                    self.progress      = int(round(party['quest']['progress']['hp'],0))
+                if (party['quest']['active']):
+                    self.progress = int(
+                        round(party['quest']['progress']['hp'], 0))
 
-            elif self.questDetails.has_key('collect'):
-                self.questType     = "collect"
-                self.questItems    = self.questDetails['collect']
+            elif 'collect' in self.questDetails:
+                self.questType = "collect"
+                self.questItems = self.questDetails['collect']
 
-                if(party['quest']['active']):
-                    self.progress      = party['quest']['progress']['collect']
-
+                if (party['quest']['active']):
+                    self.progress = party['quest']['progress']['collect']
 
     def Display(self):
         G.screen.ClearTextArea()
-        X, Y = C.SCR_FIRST_HALF_LENGTH-2, 1
+        X, Y = C.SCR_FIRST_HALF_LENGTH - 2, 1
         MAX_X = C.SCR_X - 3
 
-        titleString = "".join([self.name, " : "]+[i+", " for i in self.members[:-1]]+[self.members[-1]])
-        G.screen.Display(titleString, X, Y,color=C.SCR_COLOR_MAGENTA,bold=True)
-        G.screen.Display("-"*(C.SCR_Y-2), X+1, Y,color=C.SCR_COLOR_LIGHT_GRAY)
+        titleString = "".join(
+            [self.name, " : "] + [i + ", " for i in self.members[:-1]] + [
+                self.members[-1]])
+        G.screen.Display(titleString, X, Y, color=C.SCR_COLOR_MAGENTA,
+                         bold=True)
+        G.screen.Display("-" * (C.SCR_Y - 2), X + 1, Y,
+                         color=C.SCR_COLOR_LIGHT_GRAY)
         X += 2
 
         if self.quest != None and self.party['quest']['active'] == True:
-            G.screen.Display("Quest: "+self.questText, X, Y,bold=True)
+            G.screen.Display("Quest: " + self.questText, X, Y, bold=True)
             X += 1
             if self.questType == "boss":
                 # Display Boss Stats
-                G.screen.Display(str(self.bossName)+" "+C.SYMBOL_HEART+" : "+
-                                 str(self.progress)+"/"+str(self.bossMaxHealth),MAX_X, Y,
-                                 color=C.SCR_COLOR_RED, bold=True)
+                G.screen.Display(
+                    str(self.bossName) + " " + C.SYMBOL_HEART + " : " +
+                    str(self.progress) + "/" + str(self.bossMaxHealth), MAX_X,
+                    Y,
+                    color=C.SCR_COLOR_RED, bold=True)
 
                 MAX_X -= 1
 
@@ -121,33 +135,35 @@ class Party(object):
                 # Display Collect Statistics
                 disp_string = "Collect "
                 for (key, value) in self.questItems.items():
-                    disp_string += value['text'].encode("utf-8") + " : " + str(self.progress[key]) + "/" + str(value['count']) + " "
+                    disp_string += value['text'] + " : " + str(
+                        self.progress[key]) + "/" + str(value['count']) + " "
 
                 G.screen.Display(disp_string, MAX_X, Y,
                                  color=C.SCR_COLOR_YELLOW, bold=True)
                 MAX_X -= 1
 
-
-        self.chatMenu.SetXY(X+1, 1)
+        self.chatMenu.SetXY(X + 1, 1)
         self.chatMenu.SetNumRows(MAX_X - (X + 1))
         self.chatMenu.Display()
         self.chatMenu.Input()
 
+
 def CheckDrops(response):
     drop = None
-    if response.has_key('drop'):
+    if 'drop' in response:
         logger.debug("  Found a drop!\n%s" % str(response))
-        if response['drop'].has_key('dialog'):
-            drop=str(response['drop']['dialog'].encode("utf-8"))
-        elif response['drop'].has_key('text'):
-            drops=str(response['drop']['text'].encode("utf-8"))
-        elif response['drop'].has_key('notes'):
-            drop=str(response['drop']['notes'].encode("utf-8"))
+        if 'dialog' in response['drop']:
+            drop = str(response['drop']['dialog'])
+        elif 'text' in response['drop']:
+            drops = str(response['drop']['text'])
+        elif 'notes' in response['drop']:
+            drop = str(response['drop']['notes'])
 
     return drop
 
-def EffectiveValueTask(value): # Value used for calculation of damages.
-                               # Between -47.27 and 21.27
+
+def EffectiveValueTask(value):  # Value used for calculation of damages.
+    # Between -47.27 and 21.27
     if value < -47.27:
         return -47.27
     if value > 21.27:
@@ -157,7 +173,6 @@ def EffectiveValueTask(value): # Value used for calculation of damages.
 
 
 def GetData():
-
     DEBUG.Display("Please Wait...")
     data = G.reqManager.FetchUserData()
     DEBUG.Display(" ")
@@ -170,8 +185,7 @@ def GetData():
 
     userStats = H.GetUserStats(data)
     stealth = data['stats']['buffs']['stealth']
-    conBonus = max(1 - (userStats['con']*(1.0/250)), 0.1)
-
+    conBonus = max(1 - (userStats['con'] * (1.0 / 250)), 0.1)
 
     userDamage = 0
     partyDamage = 0
@@ -181,13 +195,14 @@ def GetData():
     quest = party.get('quest', {})
     if quest != {}:
         questDetails = G.content.Quest(quest['key'])
-        userDamageBoss = math.floor(quest['progress']['up']*10)/10
+        userDamageBoss = math.floor(quest['progress']['up'] * 10) / 10
 
     dailies = G.reqManager.FetchUserTasks("dailys")
     dailiesIncomplete = 0
 
     for daily in dailies:
-        logger.debug("Processing Daily: %s" % str(daily['text'].encode("utf-8")))
+        logger.debug(
+            "Processing Daily: %s" % str(daily['text']))
         if not H.isDueDaily(daily) or daily['completed']:
             continue
 
@@ -202,15 +217,15 @@ def GetData():
         checklistProportionDone = 0.0
 
         if total > 0:
-            checklistProportionDone = (done*1.0)/total
+            checklistProportionDone = (done * 1.0) / total
 
-        damage = 0.9747**(EffectiveValueTask(daily['value']))
-        damage = damage*(1 - checklistProportionDone)
+        damage = 0.9747 ** (EffectiveValueTask(daily['value']))
+        damage = damage * (1 - checklistProportionDone)
 
         # Due To Boss
         if quest != {}:
             bossDamage = damage
-            if questDetails.has_key('boss'):
+            if 'boss' in questDetails:
                 if daily['priority'] < 1:
                     bossDamage *= daily['priority']
 
@@ -218,22 +233,23 @@ def GetData():
 
         userDamage += damage * conBonus * daily['priority'] * 2
 
-
-
     userDamage += partyDamage
 
-    userDamage = math.ceil(userDamage*10)/10
-    partyDamage = math.ceil(partyDamage*10)/10
-    data_items = ["Current Health: "+str(G.user.hp), "Dailies Incomplete: "+str(dailiesIncomplete), "Est. Damage to You: "+str(userDamage), "Est. Damage to Party: "+str(partyDamage),
-                  "Est. Damage to Boss: "+str(userDamageBoss)]
+    userDamage = math.ceil(userDamage * 10) / 10
+    partyDamage = math.ceil(partyDamage * 10) / 10
+    data_items = ["Current Health: " + str(G.user.hp),
+                  "Dailies Incomplete: " + str(dailiesIncomplete),
+                  "Est. Damage to You: " + str(userDamage),
+                  "Est. Damage to Party: " + str(partyDamage),
+                  "Est. Damage to Boss: " + str(userDamageBoss)]
 
     # Collection statistics if it is a collect quest
-    if questDetails.has_key('collect'):
+    if 'collect' in questDetails:
         disp_string = "You have found "
         for (key, value) in quest['progress']['collect'].items():
-            disp_string += str(value) + " " + questDetails['collect'][key]['text'] + " "
+            disp_string += str(value) + " " + questDetails['collect'][key][
+                'text'] + " "
         data_items += [disp_string]
-
 
     data_items = [M.SimpleTextItem(i) for i in data_items]
 

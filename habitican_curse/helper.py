@@ -12,12 +12,12 @@ from dateutil import tz, relativedelta
 
 # Custom Module Imports
 
-import config as C
-from screen import Screen
-import global_objects as G
-import debug as DEBUG
-import content as CT
-import menu as M
+import habitican_curse.config as C
+from habitican_curse.screen import Screen
+import habitican_curse.global_objects as G
+import habitican_curse.debug as DEBUG
+import habitican_curse.content as CT
+import habitican_curse.menu as M
 
 #Set up logging
 import logging
@@ -431,7 +431,7 @@ def RepeatPicker(original=C.DEFAULT_REPEAT):
     while(1):
         dY = Y
         G.screen.Display("Set Weekly: ", X-1, Y,bold=True)
-        for i in xrange(7):
+        for i in range(7):
             if i == current:
                 if newRepeat[sequence[i]]:
                     G.screen.Display(translate[sequence[i]], X, dY,

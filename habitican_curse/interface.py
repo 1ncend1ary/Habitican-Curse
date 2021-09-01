@@ -4,21 +4,25 @@
 """
 # Standard Library Imports
 import curses
-import shlex # For parsing
+import shlex  # For parsing
 
 # Custom Module Imports
-import config as C
-from screen import Screen
-import global_objects as G
-import helper as H
-import menu as M
-import debug as DEBUG
-import content as CT
+import time
 
-#Set up logging
+import habitican_curse.config as C
+from habitican_curse.screen import Screen
+import habitican_curse.global_objects as G
+import habitican_curse.helper as H
+import habitican_curse.menu as M
+import habitican_curse.debug as DEBUG
+import habitican_curse.content as CT
+
+# Set up logging
 import logging
+
 logger = logging.getLogger(__name__)
 logger.debug("Debug logging started for %s..." % __name__)
+
 
 def Idx(parsed, index):
     # Return element in the parsed list at index. Return "" if not present
@@ -37,7 +41,7 @@ class Interface(object):
     def Init(self):
         G.HabitMenu.SetXY(1, 2)
         G.DailyMenu.SetXY(1, 6 + C.SCR_MENU_ITEM_WIDTH)
-        G.TODOMenu.SetXY(1, 10 + 2*C.SCR_MENU_ITEM_WIDTH)
+        G.TODOMenu.SetXY(1, 10 + 2 * C.SCR_MENU_ITEM_WIDTH)
 
         G.HabitMenu.Reload()
         G.DailyMenu.Reload()
@@ -48,19 +52,21 @@ class Interface(object):
         G.TODOMenu.Init()
 
         # Borders
-        G.screen.Display(u'\u2550'.encode('utf-8')*C.SCR_Y, 14, 0,bold=True,color=C.SCR_COLOR_WHITE)
+        # was 14
+        G.screen.Display('\u2550' * C.SCR_Y, C.SCR_MAX_MENU_ROWS + 4, 0, bold=True,
+                         color=C.SCR_COLOR_WHITE)
 
         # User Stats
         G.user.PrintData()
 
         # Save this context for future use in a register
         G.screen.SaveInRegister(0)
-        G.screen.SaveInRegister(3) # For storing marks and deletes
+        G.screen.SaveInRegister(3)  # For storing marks and deletes
 
         # Used for scrolling
         self.trinity = [G.HabitMenu, G.DailyMenu, G.TODOMenu]
         self.currentMenu = 0
-        for i in xrange(0, 3):
+        for i in range(0, 3):
             if not self.trinity[i].IsEmpty():
                 self.currentMenu = i
                 break
@@ -82,11 +88,11 @@ class Interface(object):
         self.Highlight()
 
     def ScrollLeft(self):
-        if self.currentMenu == 0: # Very Annoying otherwise
+        if self.currentMenu == 0:  # Very Annoying otherwise
             return
 
-        for i in [(self.currentMenu-1)%3, (self.currentMenu-2)%3,
-                self.currentMenu]:
+        for i in [(self.currentMenu - 1) % 3, (self.currentMenu - 2) % 3,
+                  self.currentMenu]:
             if not self.trinity[i].IsEmpty():
                 break
         self.currentMenu = i
@@ -94,10 +100,10 @@ class Interface(object):
         self.Highlight()
 
     def ScrollRight(self):
-        if self.currentMenu == 2: # Very annoying otherwise
+        if self.currentMenu == 2:  # Very annoying otherwise
             return
-        for i in [(self.currentMenu+1)%3, (self.currentMenu+2)%3,
-                self.currentMenu]:
+        for i in [(self.currentMenu + 1) % 3, (self.currentMenu + 2) % 3,
+                  self.currentMenu]:
             if not self.trinity[i].IsEmpty():
                 break
         self.currentMenu = i
@@ -155,15 +161,14 @@ class Interface(object):
         parsed = shlex.split(command)
         if Idx(parsed, 0) == "set":
 
-
-            if not Idx(parsed, 1) in  C.SET_COMMANDS:
+            if not Idx(parsed, 1) in C.SET_COMMANDS:
                 DEBUG.Display("Invalid Set: " + command)
                 return
             c = Idx(parsed, 1)
 
             # Change Difficulty
             if c == "d":
-                if (not Idx(parsed, 2) in C.DIFFS) or (Idx(parsed, 3) != "") :
+                if (not Idx(parsed, 2) in C.DIFFS) or (Idx(parsed, 3) != ""):
                     DEBUG.Display("Invalid set d: " + Idx(parsed, 2))
                     return
                 key = Idx(parsed, 2)
@@ -192,7 +197,8 @@ class Interface(object):
             # Set weekly options for dailies
             elif c == "weekly":
                 if G.currentTask.task_type != "daily":
-                    DEBUG.Display("Cannot change 'weekly' parameter for a non-daily task")
+                    DEBUG.Display(
+                        "Cannot change 'weekly' parameter for a non-daily task")
                     return
 
                 repeat = H.RepeatPicker(G.currentTask.task.repeat)
@@ -204,11 +210,13 @@ class Interface(object):
             # Set every X days option for dailies
             elif c == "every":
                 if G.currentTask.task_type != "daily":
-                    DEBUG.Display("Cannot change 'every' parameter for a non-daily task")
+                    DEBUG.Display(
+                        "Cannot change 'every' parameter for a non-daily task")
                     return
 
                 if not Idx(parsed, 2).isdigit():
-                    DEBUG.Display("Invalid number of days. Should be a valid integer")
+                    DEBUG.Display(
+                        "Invalid number of days. Should be a valid integer")
                     return
 
                 G.currentTask.SetEvery(int(Idx(parsed, 2)))
@@ -218,7 +226,8 @@ class Interface(object):
             # Set Direction (Pos/Neg/Both/None) for habits
             elif c == "direction":
                 if G.currentTask.task_type != "habit":
-                    DEBUG.Display("Cannot change directions for a non-habit task")
+                    DEBUG.Display(
+                        "Cannot change directions for a non-habit task")
                     return
 
                 direction = Idx(parsed, 2)
@@ -231,30 +240,32 @@ class Interface(object):
                 elif direction == "none":
                     G.currentTask.SetDirection(up=False, down=False)
                 else:
-                    DEBUG.Display("Invalid direction parameter. Should be one of [both, pos, neg, none]")
+                    DEBUG.Display(
+                        "Invalid direction parameter. Should be one of [both, pos, neg, none]")
                     return
 
                 self.Highlight()
                 return
 
-        elif Idx(parsed, 0) == "et": # Create Todo
+        elif Idx(parsed, 0) == "et":  # Create Todo
 
             c_title = Idx(parsed, 1)
-            if c_title == "" :
+            if c_title == "":
                 title = H.TitlePicker()
             else:
                 title = Idx(parsed, 1)
-
-            G.reqManager.CreateTask_orig(title, "todo")
+            priority = Idx(parsed, 2)
+            priorities = {'t': 'trivial', 'e': 'easy', 'm': 'medium', 'h': 'hard'}
+            G.reqManager.CreateTask_orig(title, "todo", priorities[priority])
             self.trinity[self.currentMenu].InitialCurrentTask()
 
             self.Highlight()
             return
 
-        elif Idx(parsed, 0) == "ed": # Create Daily
+        elif Idx(parsed, 0) == "ed":  # Create Daily
 
             c_title = Idx(parsed, 1)
-            if c_title == "" :
+            if c_title == "":
                 title = H.TitlePicker()
             else:
                 title = Idx(parsed, 1)
@@ -264,10 +275,10 @@ class Interface(object):
             self.Highlight()
             return
 
-        elif Idx(parsed, 0) == "eh": # Create Habit
+        elif Idx(parsed, 0) == "eh":  # Create Habit
 
             c_title = Idx(parsed, 1)
-            if c_title == "" :
+            if c_title == "":
                 title = H.TitlePicker()
             else:
                 title = Idx(parsed, 1)
@@ -280,24 +291,24 @@ class Interface(object):
         if command != "":
             DEBUG.Display("Invalid: " + command)
 
-
     def Command(self, command):
         if command == "w":
-            self.FlushChangesToQueue() #Write out things to the request queue
-            G.reqManager.Flush() #Send the queue
+            self.FlushChangesToQueue()  # Write out things to the request queue
+            G.reqManager.Flush()  # Send the queue
 
         elif command == "r":
             self.FlushChangesToQueue()
             G.prevTask = None
             G.currentTask = None
-            if(len(G.reqManager.MarkUpQueue) |
-               len(G.reqManager.MarkDownQueue) |
-               len(G.reqManager.MarkQueue) |
-               len(G.reqManager.DeleteQueue) |
-               len(G.reqManager.EditQueue) ):
-                DEBUG.Display("Some writes are pending (add ! to ignore and reload anyway)")
+            if (len(G.reqManager.MarkUpQueue) |
+                    len(G.reqManager.MarkDownQueue) |
+                    len(G.reqManager.MarkQueue) |
+                    len(G.reqManager.DeleteQueue) |
+                    len(G.reqManager.EditQueue)):
+                DEBUG.Display(
+                    "Some writes are pending (add ! to ignore and reload anyway)")
                 return
-           
+
             self.Command("r!")
 
         elif command == "r!":
@@ -334,7 +345,7 @@ class Interface(object):
             self.Parser(command)
 
     def Input(self):
-        while(1):
+        while (1):
             try:
                 # Don't starve the book-keeping thread unnecessarily
                 G.screen.Release()
@@ -372,21 +383,22 @@ class Interface(object):
                     break
 
                 if command == "wq":
-                    self.FlushChangesToQueue() #Write out things to the request queue
-                    G.reqManager.Flush() #Send the queue
+                    self.FlushChangesToQueue()  # Write out things to the request queue
+                    G.reqManager.Flush()  # Send the queue
                     break
 
                 if command == "q":
                     self.FlushChangesToQueue()
 
-                    if(len(G.reqManager.MarkUpQueue) |
-                       len(G.reqManager.MarkDownQueue) |
-                       len(G.reqManager.MarkQueue) |
-                       len(G.reqManager.DeleteQueue) |
-                       len(G.reqManager.EditQueue) ):
-                        DEBUG.Display("No write since last change (add ! to override)")
-                        continue #Restart command loop
-                    break #exit
+                    if (len(G.reqManager.MarkUpQueue) |
+                            len(G.reqManager.MarkDownQueue) |
+                            len(G.reqManager.MarkQueue) |
+                            len(G.reqManager.DeleteQueue) |
+                            len(G.reqManager.EditQueue)):
+                        DEBUG.Display(
+                            "No write since last change (add ! to override)")
+                        continue  # Restart command loop
+                    break  # exit
 
-                G.screen.Display(" "*(C.SCR_Y-1), C.SCR_X-1, 0)
+                G.screen.Display(" " * (C.SCR_Y - 1), C.SCR_X - 1, 0)
                 self.Command(command)

@@ -11,24 +11,25 @@ import datetime
 
 # Custom Module Imports
 
-import config as C
-from screen import Screen
-import global_objects as G
-import helper as H
-import menu as M
-import task as T
-import debug as DEBUG
-import user as U
+import habitican_curse.config as C
+from habitican_curse.screen import Screen
+import habitican_curse.global_objects as G
+import habitican_curse.helper as H
+import habitican_curse.menu as M
+import habitican_curse.task as T
+import habitican_curse.debug as DEBUG
+import habitican_curse.user as U
 
-#Set up logging
+# Set up logging
 import logging
+
 logger = logging.getLogger(__name__)
 logger.debug("Debug logging started for %s..." % __name__)
 
 # URL Definitions
 API_URL = "https://habitica.com:443/api/v3"
 
-#Request Methods
+# Request Methods
 request_methods = dict()
 request_methods['get'] = requests.get
 request_methods['put'] = requests.put
@@ -41,38 +42,41 @@ class RequestManager(object):
 
     def __init__(self):
 
-        self.headers = {'x-api-key': C.getConfig("key"), 'x-api-user': C.getConfig("uuid")}
+        self.headers = {'x-api-key': C.getConfig("key"),
+                        'x-api-user': C.getConfig("uuid")}
         self.ClearQueues()
 
-
     # General Wrapper to fetch JSON data from server
-    def APIV3_call(self,path,params={},failure='hard',method='get',obj=None):
+    def APIV3_call(self, path, params={}, failure='hard', method='get',
+                   obj=None):
 
         if method not in request_methods:
-            raise ValueError("Unknown Method type ",method)
+            raise ValueError("Unknown Method type ", method)
 
-        url = API_URL+"/"+path
+        url = API_URL + "/" + path
 
-        if(method == 'get'):
-            url+="?"
-            for param, value in params.iteritems():
-                url+=param + "=" + value
+        if method == 'get':
+            url += "?"
+            for param, value in params.items():
+                url += param + "=" + value
 
-        logger.warn("Calling V3 API: %s" % url)
-        resp = request_methods[method](url, headers=self.headers,json=obj)
+        # logger.warn("Calling V3 API: %s" % url)
+        resp = request_methods[method](url, headers=self.headers, json=obj)
 
         # Need some error handling here
         if resp.status_code == 200:
             logger.debug("HTTP Response: 200 Okay!")
             rval = resp.json()['data']
-        elif  resp.status_code == 201:
+        elif resp.status_code == 201:
             logger.debug("HTTP Response: 201 Object Created")
             rval = resp.json()['data']
         else:
-            if(failure=='hard'):
-                raise ValueError("HTTP Response not recognized: %d" % resp.status_code)
+            if (failure == 'hard'):
+                raise ValueError(
+                    "HTTP Response not recognized: %d" % resp.status_code)
             else:
-                logger.warn("HTTP Response not recognized: %d" % resp.status_code)
+                logger.warn(
+                    "HTTP Response not recognized: %d" % resp.status_code)
                 rval = -1
 
         return rval
@@ -81,58 +85,58 @@ class RequestManager(object):
     ## V3 API Calls                #
     ################################
 
-    #Fetches the 'content', which is basically all the strings and values that are constant in the game
+    # Fetches the 'content', which is basically all the strings and values that are constant in the game
     # https://habitica.com/apidoc/#api-Content-ContentGet
     def FetchGameContent(self):
         return self.APIV3_call("content")
 
-    #Fetches the User Object from the API
+    # Fetches the User Object from the API
     # https://habitica.com/apidoc/#api-User-UserGet
     def FetchUserData(self):
         return self.APIV3_call("user")
 
-    #Fetches User Tasks from the API.
+    # Fetches User Tasks from the API.
     # https://habitica.com/apidoc/#api-Task-GetUserTasks
     # task_type can be "habits", "dailys", "todos", "rewards", "completedTodos"
-    def FetchUserTasks(self,task_type=None):
+    def FetchUserTasks(self, task_type=None):
         tasks = None
-        if(task_type is None):
+        if (task_type is None):
             tasks = self.APIV3_call("tasks/user")
         else:
-            if(task_type not in ["habits", "dailys", "todos", "rewards", "completedTodos"]):
+            if (task_type not in ["habits", "dailys", "todos", "rewards",
+                                  "completedTodos"]):
                 raise ValueError("Unknown task type %s" % task_type)
-            tasks = self.APIV3_call("tasks/user",{'type':task_type})
+            tasks = self.APIV3_call("tasks/user", {'type': task_type})
 
         return tasks
 
     # Score a task up/down
     # https://habitica.com/apidoc/#api-Task-ScoreTask
-    def ScoreTask(self,task_id,direction):
-        if(direction not in ['up','down']):
+    def ScoreTask(self, task_id, direction):
+        if (direction not in ['up', 'down']):
             raise ValueError("Unknown task direction %s" % direction)
-        return self.APIV3_call("tasks/"+task_id+"/score/"+direction,method='post')
+        return self.APIV3_call("tasks/" + task_id + "/score/" + direction,
+                               method='post')
 
     # Add a new task
     # https://habitica.com/apidoc/#api-Task-CreateUserTasks
     def CreateTask(self, task_obj):
-        return self.APIV3_call("tasks/user",method='post',obj=task_obj)
+        return self.APIV3_call("tasks/user", method='post', obj=task_obj)
 
     # Delete a task
     # https://habitica.com/apidoc/#api-Task-DeleteTask
     def DeleteTask(self, task_id):
-        return self.APIV3_call("tasks/"+task_id,method='delete')
+        return self.APIV3_call("tasks/" + task_id, method='delete')
 
     # Update a task
     # https://habitica.com/apidoc/#api-Task-UpdateTask
     def UpdateTask(self, task_id, task_obj):
-        return self.APIV3_call("tasks/"+task_id,method='put',obj=task_obj)
+        return self.APIV3_call("tasks/" + task_id, method='put', obj=task_obj)
 
-    #Fetches the User Object from the API
+    # Fetches the User Object from the API
     # https://habitica.com/apidoc/#api-Group-GetGroup
     def FetchParty(self):
-        return self.APIV3_call("groups/party")
-
-
+        return self.APIV3_call("groups/", params={'type': 'party'})
 
     ################################
     ## Deprecated Functions        #
@@ -142,24 +146,25 @@ class RequestManager(object):
     # request manager (they're interface/model based, not
     # request based
 
-    def CreateTask_orig(self,title,task_type):
+    def CreateTask_orig(self, title, task_type, task_priority='easy'):
         task = {}
-        task['text'] = title.decode("utf-8")
+        task['text'] = title
         task['type'] = task_type
-        task['priority'] = 1
+        priorities = {'trivial': '0.5', 'easy': '1', 'medium': '1.5', 'hard': '2'}
+        task['priority'] = priorities[task_priority]
 
         if task_type == 'todo' or task_type == 'daily':
             task['checklist'] = []
         if task_type == "daily":
             task['everyX'] = 1
             task['frequency'] = 'weekly'
-            task['repeat'] = {'m': True, 't': True, 'w': True, 'th': True, 'f': True, 's': True, 'su': True}
+            task['repeat'] = {'m': True, 't': True, 'w': True, 'th': True,
+                              'f': True, 's': True, 'su': True}
         if task_type == "habit":
             task['up'] = True
             task['down'] = True
 
-
-        DEBUG.Display("Creating Task...");
+        DEBUG.Display("Creating Task...")
         ret_task = self.CreateTask(task)
         DEBUG.Display(" ")
 
@@ -189,13 +194,12 @@ class RequestManager(object):
         self.DeleteQueue = []
         self.EditQueue = []
 
-    #Fetches basic user data for the interface
+    # Fetches basic user data for the interface
     def FetchData(self):
-
 
         G.LastUpdate = datetime.datetime.now()
 
-        #Get the user data from the API
+        # Get the user data from the API
         DEBUG.Display("Connecting...")
 
         user_json = self.FetchUserData()
@@ -205,48 +209,48 @@ class RequestManager(object):
         time.sleep(1)
         DEBUG.Display(" ")
 
-
         # Initialize User Stats
-        G.user = U.User( user_json )
+        G.user = U.User(user_json)
 
         # These will contain the menu items passed to create the Habit, Daily
         # and Todo menus
-        habit_items   = []
+        habit_items = []
         dailies_items = []
-        todos_items   = []
+        todos_items = []
 
         logger.debug("Found %d tasks" % len(task_json))
 
         for i in task_json:
-            logger.debug("Processing a TODO: %s" % i['text'].encode("utf-8").strip())
-            if( i['type'] == "habit" ):
+            logger.debug("Processing a TODO: %s" % i['text'].strip())
+            if (i['type'] == "habit"):
                 item = T.Habit(i)
                 habit_items += [M.MenuItem(item, "habit", item.text)]
-            elif( i['type'] == "daily" ):
+            elif (i['type'] == "daily"):
                 item = T.Daily(i)
                 dailies_items += [M.MenuItem(item, "daily", item.text)]
-            elif( i['type'] == "todo" ):
+            elif (i['type'] == "todo"):
                 if i['completed']:
                     continue
                 item = T.TODO(i)
                 todos_items += [M.MenuItem(item, "todo", item.text)]
-            elif( i['type'] == "reward" ):
-                logger.warn("Custom Rewards aren't implemented yet, but the user has one: %s" % i['text'])
+            elif i['type'] == "reward":
+                # logger.warn( "Custom Rewards aren't implemented yet, but the " "user has one: %s" % i['text'])
+                pass
             else:
-                logger.debug("Weird task %s with type: %s" %(i['text'].encode("utf-8"), i['type'].encode("utf-8")))
-                raise ValueError("Unknown task type %s" % i['type'].encode("utf-8"))
+                logger.debug(
+                    "Weird task %s with type: %s" % (i['text'], i['type']))
+                raise ValueError("Unknown task type %s" % i['type'])
 
         # Generate the menus for the display
         G.HabitMenu = M.Menu(habit_items, "Habits")
         G.DailyMenu = M.Menu(dailies_items, "Dailies")
-        G.TODOMenu  = M.Menu(todos_items, "TODOs")
-
+        G.TODOMenu = M.Menu(todos_items, "TODOs")
 
     # Write back changes to the server and update the interface
-    def Flush(self,flush_for_quit=False):
+    def Flush(self, flush_for_quit=False):
 
-        #TODO: most of this should not happen in the request manager
-        import content as CT
+        # TODO: most of this should not happen in the request manager
+        import habitican_curse.content as CT
 
         DEBUG.Display("Please Wait...")
 
@@ -263,14 +267,14 @@ class RequestManager(object):
         # Habits marked as +
         for i in self.MarkUpQueue:
             logger.debug("Marking '%s' up" % str(i.taskname))
-            json = self.ScoreTask(i.task.taskID,'up')
+            json = self.ScoreTask(i.task.taskID, 'up')
 
             for i in diffDict:
                 diffDict[i] = json[i]
 
             # Check for drops
-            tmpdrp = CT.CheckDrops( json['_tmp'] )
-            if( tmpdrp is not None):
+            tmpdrp = CT.CheckDrops(json['_tmp'])
+            if (tmpdrp is not None):
                 Drops.append(tmpdrp)
 
         #
@@ -279,7 +283,7 @@ class RequestManager(object):
         # Habits marked as -
         for i in self.MarkDownQueue:
             logger.debug("Marking '%s' down" % str(i))
-            json = self.ScoreTask(i.task.taskID,'down')
+            json = self.ScoreTask(i.task.taskID, 'down')
 
             for i in diffDict:
                 diffDict[i] = json[i]
@@ -298,7 +302,7 @@ class RequestManager(object):
             if (direction is None):
                 continue
 
-            json = self.ScoreTask(i.task.taskID,direction)
+            json = self.ScoreTask(i.task.taskID, direction)
 
             if i.task.task_type == "todo":
                 G.TODOMenu.Remove(i.task.taskID)
@@ -309,8 +313,8 @@ class RequestManager(object):
                 diffDict[i] = json[i]
 
             # Check for drops
-            tmpdrp = CT.CheckDrops( json['_tmp'] )
-            if( tmpdrp is not None):
+            tmpdrp = CT.CheckDrops(json['_tmp'])
+            if (tmpdrp is not None):
                 Drops.append(tmpdrp)
 
         #
@@ -332,7 +336,7 @@ class RequestManager(object):
         for i in self.EditQueue:
             self.UpdateTask(i.task.taskID, i.task.data)
 
-        if(flush_for_quit):
+        if (flush_for_quit):
             return
 
         #
@@ -361,5 +365,3 @@ class RequestManager(object):
             G.screen.RestoreRegister(1)
 
         self.ClearQueues()
-
-

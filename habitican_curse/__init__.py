@@ -7,12 +7,12 @@ import threading
 
 # Custom Module Imports
 
-import config as C
-from screen import Screen
-import global_objects as G
-import helper as H
-import menu as M
-import request_manager as RM
-import interface as I
-import content as CT
-import debug as DEBUG
+import habitican_curse.config as C
+from habitican_curse.screen import Screen
+import habitican_curse.global_objects as G
+import habitican_curse.helper as H
+import habitican_curse.menu as M
+import habitican_curse.request_manager as RM
+import habitican_curse.interface as I
+import habitican_curse.content as CT
+import habitican_curse.debug as DEBUG

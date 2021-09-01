@@ -8,12 +8,12 @@ import datetime
 
 # Custom Module Imports
 
-import config as C
-import global_objects as G
-import debug as DEBUG
-import helper as H
-import menu as M
-import content as CT
+import habitican_curse.config as C
+import habitican_curse.global_objects as G
+import habitican_curse.debug as DEBUG
+import habitican_curse.helper as H
+import habitican_curse.menu as M
+import habitican_curse.content as CT
 
 #Set up logging
 import logging
